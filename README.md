@@ -95,5 +95,3 @@ This project is licensed under the MIT License.
 - **```c**: Marks a block of C code for syntax highlighting.
 - **Bullet points**: Used to list features and requirements.
 - **Command blocks**: For commands like compilation instructions.
-
-You can copy and paste this into your `README.md`, and it should render nicely on platforms like GitHub!
