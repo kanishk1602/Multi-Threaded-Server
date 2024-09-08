@@ -1,11 +1,17 @@
+
+
+
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
 
 void* myTurn(void *arg){
+    int *iptr = (int *)malloc(sizeof(int));
+    *iptr = 5;
     for(int i=0;i<8;i++){
         sleep(1);
-        printf("My Turn! %d\n",i);
+        printf("My Turn! %d\n",i,*iptr);
+        (*iptr)++;
     }
     return NULL;
 }
@@ -19,9 +25,11 @@ void yourTurn(){
 
 int main(){
     pthread_t newthread;
-    int v = 0;
+    int *result;
 
     pthread_create(&newthread,NULL,myTurn,NULL);
     yourTurn();
-    pthread_join(newthread,NULL);
+    int v;
+    pthread_join(newthread,(void *  )&result);
+    printf("thread's done: result = %d\n",*result);
 }
