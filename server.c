@@ -7,23 +7,36 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <pthread.h>
+#include "myqueue.h"
+
 
 #define SERVERPORT 8989
 #define BUFSIZE 4096
 #define SOCKETERROR (-1)
 #define SERVER_BACKLOG 100 //allow 100 waiting connections
+#define THREAD_POOL_SIZE 20
 
+pthread_t thread_pool[THREAD_POOL_SIZE];
+//queue is a shared data structure and it isn't thread safe, it 2 threads try to remove work from the queue at the same time or 1 do enqueue and 1 do dequeue causes race condition, to fix protect using mutex lock
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // without it, there will be 
+
+void* thread_function(void *arg);
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
 void* handle_connection(void* client_socket);
 int check(int exp, const char *msg);
+// void* thread_function(void *arg);
+
 
 int main (int argc, char **argv) {
     int server_socket, client_socket, addr_size;
-
-    socklen_t addr_size;
     SA_IN server_addr, client_addr;
+
+    //first off create a bunch of threads to handle future connections.
+    for(int i=0;i<THREAD_POOL_SIZE;i++){
+        pthread_create(&thread_pool[i],NULL,thread_function,NULL);
+    }
 
     // Create the server socket
     check((server_socket = socket(AF_INET, SOCK_STREAM, 0)),
@@ -53,14 +66,17 @@ int main (int argc, char **argv) {
         printf("Connected!\n");
 
         // Handle the connection
-        handle_connection(client_socket);
         pthread_t t;
         int *pclient = malloc(sizeof(int));
         *pclient = client_socket;
-        pthread_create(&t,NULL,handle_connection,pclient); 
+
+        //make sure only one thread messes with the queue at a time
+        pthread_mutex_lock(&mutex);
+        enqueue(pclient);
+        pthread_mutex_unlock(&mutex);
+        //pthread_create(&t,NULL,handle_connection,pclient); 
         //handle_connection(pclient); //use while removing thread
     }
-
     return 0;
 }
 
@@ -70,6 +86,19 @@ int check(int exp, const char *msg) {
         exit(1);
     }
     return exp;
+}
+
+void* thread_function(void *arg){
+    while(true){
+        int *pclient;
+        pthread_mutex_lock(&mutex);
+        pclient = dequeue();
+        pthread_mutex_unlock(&mutex);
+        if(pclient != NULL){
+            //we have a connection
+            handle_connection(pclient);
+        }
+    }
 }
 
 void* handle_connection(void* p_client_socket) {
