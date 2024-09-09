@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <pthread.h>
 
 #define SERVERPORT 8989
 #define BUFSIZE 4096
