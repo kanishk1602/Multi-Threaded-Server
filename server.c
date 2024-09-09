@@ -16,11 +16,12 @@
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
-void handle_connection(int client_socket);
+void* handle_connection(void* client_socket);
 int check(int exp, const char *msg);
 
 int main (int argc, char **argv) {
-    int server_socket, client_socket;
+    int server_socket, client_socket, addr_size;
+
     socklen_t addr_size;
     SA_IN server_addr, client_addr;
 
@@ -46,13 +47,18 @@ int main (int argc, char **argv) {
 
         // Wait for and accept an incoming connection
         addr_size = sizeof(SA_IN);
-        check(client_socket = accept(server_socket, (SA*)&client_addr, &addr_size),
+        check(client_socket = accept(server_socket, (SA*)&client_addr, (socklen_t*)&addr_size),
               "Accept failed");
 
         printf("Connected!\n");
 
         // Handle the connection
         handle_connection(client_socket);
+        pthread_t t;
+        int *pclient = malloc(sizeof(int));
+        *pclient = client_socket;
+        pthread_create(&t,NULL,handle_connection,pclient); 
+        //handle_connection(pclient); //use while removing thread
     }
 
     return 0;
@@ -66,7 +72,10 @@ int check(int exp, const char *msg) {
     return exp;
 }
 
-void handle_connection(int client_socket) {
+void* handle_connection(void* p_client_socket) {
+    int client_socket = *((int*)p_client_socket);
+    free(p_client_socket); //we don't need pointer anymore so free it
+
     char buffer[BUFSIZE];
     size_t bytes_read;
     int msgsize = 0;
@@ -87,7 +96,7 @@ void handle_connection(int client_socket) {
     if (realpath(buffer, actualpath) == NULL) {
         printf("ERROR (bad path): %s\n", buffer);
         close(client_socket);
-        return;
+        return NULL;
     }
 
     // Open the file and send its contents to the client
@@ -95,9 +104,9 @@ void handle_connection(int client_socket) {
     if (fp == NULL) {
         printf("ERROR (open): %s\n", buffer);
         close(client_socket);
-        return;
+        return NULL;
     }
-
+    sleep(1);
     // Read file contents and send them to the client
     while ((bytes_read = fread(buffer, 1, BUFSIZE, fp)) > 0) {
         printf("Sending %zu bytes\n", bytes_read);
@@ -108,4 +117,5 @@ void handle_connection(int client_socket) {
     close(client_socket);
     fclose(fp);
     printf("Closing connection\n");
+    return NULL;
 }

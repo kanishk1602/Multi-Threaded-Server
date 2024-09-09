@@ -1,5 +1,5 @@
-for N in {1..500}
+for N in {1..50}
 do
-    ruby client.rb a& 
+    ruby client.rb $((($N%6)+1)) &
 done
 wait  # This ensures the script waits for all background processes to finish
