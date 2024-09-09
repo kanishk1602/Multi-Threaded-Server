@@ -2,6 +2,7 @@
   "files.associations": {
     "*.ejs": "html",
     "*.cpp": "cpp",
-    "__locale": "c"
+    "__locale": "c",
+    "stdbool.h": "c"
   }
 }

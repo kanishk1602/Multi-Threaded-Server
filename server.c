@@ -19,6 +19,7 @@
 pthread_t thread_pool[THREAD_POOL_SIZE];
 //queue is a shared data structure and it isn't thread safe, it 2 threads try to remove work from the queue at the same time or 1 do enqueue and 1 do dequeue causes race condition, to fix protect using mutex lock
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // without it, there will be 
+pthread_cond_t condition_var = PTHREAD_COND_INITIALIZER;
 
 void* thread_function(void *arg);
 typedef struct sockaddr_in SA_IN;
@@ -73,6 +74,7 @@ int main (int argc, char **argv) {
         //make sure only one thread messes with the queue at a time
         pthread_mutex_lock(&mutex);
         enqueue(pclient);
+        pthread_cond_signal(&condition_var); // it will make the waiting thread to no longer waiting and jump back in
         pthread_mutex_unlock(&mutex);
         //pthread_create(&t,NULL,handle_connection,pclient); 
         //handle_connection(pclient); //use while removing thread
@@ -92,14 +94,26 @@ void* thread_function(void *arg){
     while(true){
         int *pclient;
         pthread_mutex_lock(&mutex);
+        pthread_cond_wait(&condition_var,&mutex); //makes thread wait until signal
+        if((pclient = dequeue()) == NULL){
+        //now the thread will only wait if it doesn't get work from queue
+        //try again
         pclient = dequeue();
+        }
         pthread_mutex_unlock(&mutex);
+
         if(pclient != NULL){
             //we have a connection
             handle_connection(pclient);
         }
     }
 }
+
+//now we have a working multithread server that uses thread pool
+//it doesn't allow to pile up million theads
+//does use all our cpu cycles while waiting for new connections to come in
+//vulnerable to denial of service (Ddos) attack 
+// event driver model and synchronous i/o future plans to fix in it
 
 void* handle_connection(void* p_client_socket) {
     int client_socket = *((int*)p_client_socket);
