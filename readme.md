@@ -4,8 +4,9 @@ A progressive implementation of a TCP file server demonstrating socket programmi
 
 ## 📚 Documentation
 
+- **[DOCUMENTATION_SUMMARY.md](DOCUMENTATION_SUMMARY.md)** - Navigation guide for all documentation
 - **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Complete project explanation, architecture, and key concepts
-- **[INTERVIEW_QUESTIONS.md](INTERVIEW_QUESTIONS.md)** - Common interview questions with detailed answers
+- **[INTERVIEW_QUESTIONS.md](INTERVIEW_QUESTIONS.md)** - Common interview questions with detailed answers (20 questions)
 
 ## 🚀 Quick Start
 
